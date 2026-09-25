@@ -1,188 +1,99 @@
-/**
- ******************************************************************************
- *							USEFUL ELECTRONICS
- ******************************************************************************/
-/**
- ******************************************************************************
- * @file    :  display.c
- * @author  :  WARD ALMASARANI
- * @version :  v.1.0
- * @date    :  Feb 1, 2023
- * @link    :  https://www.youtube.com/@usefulelectronics
- *			   Hold Ctrl button and click on the link to be directed to
-			   Useful Electronics YouTube channel	
- ******************************************************************************/
-
-
-/* INCLUDES ------------------------------------------------------------------*/
 #include "display.h"
 
+#include "esp_heap_caps.h"
+#include "esp_log.h"
+#include "esp_timer.h"
 
-/* PRIVATE STRUCTRES ---------------------------------------------------------*/
-
-/* VARIABLES -----------------------------------------------------------------*/
-lv_disp_drv_t disp_drv;  // contains callback functions
-/* DEFINITIONS ---------------------------------------------------------------*/
-
-/* MACROS --------------------------------------------------------------------*/
 static const char *TAG = "forgeui_display";
+lv_disp_drv_t disp_drv;
 
-static void forgeui_display_test(lv_disp_t *disp)
+static volatile uint32_t flush_count;
+static volatile uint32_t flush_ready_count;
+
+bool display_notify_lvgl_flush_ready(esp_lcd_panel_io_handle_t panel_io,
+                                     esp_lcd_panel_io_event_data_t *edata,
+                                     void *user_ctx)
 {
-    lv_obj_t *screen = lv_disp_get_scr_act(disp);
-    lv_obj_set_style_bg_color(screen, lv_color_hex(0x07121F), 0);
-
-    lv_obj_t *ring = lv_arc_create(screen);
-    lv_obj_set_size(ring, 224, 224);
-    lv_obj_center(ring);
-    lv_arc_set_range(ring, 0, 100);
-    lv_arc_set_value(ring, 76);
-    lv_arc_set_rotation(ring, 135);
-    lv_obj_remove_style(ring, NULL, LV_PART_KNOB);
-    lv_obj_set_style_arc_width(ring, 8, LV_PART_MAIN);
-    lv_obj_set_style_arc_width(ring, 8, LV_PART_INDICATOR);
-    lv_obj_set_style_arc_color(ring, lv_color_hex(0x1E3850), LV_PART_MAIN);
-    lv_obj_set_style_arc_color(ring, lv_color_hex(0x1DE9B6), LV_PART_INDICATOR);
-
-    lv_obj_t *title = lv_label_create(screen);
-    lv_label_set_text(title, "FORGEUI");
-    lv_obj_set_style_text_font(title, &lv_font_montserrat_14, 0);
-    lv_obj_set_style_text_color(title, lv_color_hex(0xFFFFFF), 0);
-    lv_obj_align(title, LV_ALIGN_CENTER, 0, -54);
-
-    const char *labels[] = {"GC9A01", "240 x 240", "DISPLAY TEST"};
-    const lv_color_t colors[] = {
-        LV_COLOR_MAKE(0x1D, 0xE9, 0xB6),
-        LV_COLOR_MAKE(0xFF, 0xB7, 0x4D),
-        LV_COLOR_MAKE(0x90, 0xCA, 0xF9),
-    };
-    const int offsets[] = {-22, 4, 32};
-    for (size_t i = 0; i < 3; ++i) {
-        lv_obj_t *label = lv_label_create(screen);
-        lv_label_set_text(label, labels[i]);
-        lv_obj_set_style_text_color(label, colors[i], 0);
-        lv_obj_align(label, LV_ALIGN_CENTER, 0, offsets[i]);
-    }
-
-    const lv_color_t swatch_colors[] = {
-        LV_COLOR_MAKE(0xFF, 0x17, 0x44),
-        LV_COLOR_MAKE(0x00, 0xE6, 0x76),
-        LV_COLOR_MAKE(0x29, 0x79, 0xFF),
-    };
-    const int swatch_offsets[] = {-28, 0, 28};
-    for (size_t i = 0; i < 3; ++i) {
-        lv_obj_t *swatch = lv_obj_create(screen);
-        lv_obj_set_size(swatch, 14, 14);
-        lv_obj_set_style_radius(swatch, LV_RADIUS_CIRCLE, 0);
-        lv_obj_set_style_bg_color(swatch, swatch_colors[i], 0);
-        lv_obj_set_style_border_width(swatch, 0, 0);
-        lv_obj_align(swatch, LV_ALIGN_CENTER, swatch_offsets[i], 62);
-    }
-}
-/* FUNCTION PROTOTYPES -------------------------------------------------------*/
-
-
-bool display_notify_lvgl_flush_ready(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_io_event_data_t *edata, void *user_ctx)
-{
-    lv_disp_drv_t *disp_driver = (lv_disp_drv_t *)user_ctx;
-    lv_disp_flush_ready(disp_driver);
+    flush_ready_count++;
+    lv_disp_flush_ready((lv_disp_drv_t *)user_ctx);
     return false;
 }
 
-static void example_lvgl_flush_cb(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color_map)
+static void lvgl_flush_cb(lv_disp_drv_t *driver, const lv_area_t *area, lv_color_t *color_map)
 {
-    esp_lcd_panel_handle_t panel_handle = (esp_lcd_panel_handle_t) drv->user_data;
-    int offsetx1 = area->x1;
-    int offsetx2 = area->x2;
-    int offsety1 = area->y1;
-    int offsety2 = area->y2;
-    // copy a buffer's content to a specific area of the display
-    esp_lcd_panel_draw_bitmap(panel_handle, offsetx1, offsety1, offsetx2 + 1, offsety2 + 1, color_map);
-}
-
-/* Rotate display and touch, when rotated screen in LVGL. Called when driver parameters are updated. */
-static void example_lvgl_port_update_callback(lv_disp_drv_t *drv)
-{
-    esp_lcd_panel_handle_t panel_handle = (esp_lcd_panel_handle_t) drv->user_data;
-
-    switch (drv->rotated) {
-    case LV_DISP_ROT_NONE:
-        // Rotate LCD display
-        esp_lcd_panel_swap_xy(panel_handle, false);
-        esp_lcd_panel_mirror(panel_handle, true, false);
-
-        break;
-    case LV_DISP_ROT_90:
-        // Rotate LCD display
-        esp_lcd_panel_swap_xy(panel_handle, true);
-        esp_lcd_panel_mirror(panel_handle, true, true);
-
-        break;
-    case LV_DISP_ROT_180:
-        // Rotate LCD display
-        esp_lcd_panel_swap_xy(panel_handle, false);
-        esp_lcd_panel_mirror(panel_handle, false, true);
-
-        break;
-    case LV_DISP_ROT_270:
-        // Rotate LCD display
-        esp_lcd_panel_swap_xy(panel_handle, true);
-        esp_lcd_panel_mirror(panel_handle, false, false);
-
-        break;
+    flush_count++;
+    if (flush_count <= 3) {
+        ESP_LOGI(TAG, "Flush %lu: (%d,%d)-(%d,%d), buffer=%p",
+                 (unsigned long)flush_count, area->x1, area->y1, area->x2, area->y2, color_map);
     }
+
+    esp_lcd_panel_handle_t panel = (esp_lcd_panel_handle_t)driver->user_data;
+    ESP_ERROR_CHECK(esp_lcd_panel_draw_bitmap(panel, area->x1, area->y1,
+                                               area->x2 + 1, area->y2 + 1, color_map));
 }
 
-
-
-static void example_increase_lvgl_tick(void *arg)
+static void lvgl_tick_cb(void *arg)
 {
-    /* Tell LVGL how many milliseconds has elapsed */
     lv_tick_inc(EXAMPLE_LVGL_TICK_PERIOD_MS);
 }
 
+static void lvgl_task(void *arg)
+{
+    uint32_t iterations = 0;
+    ESP_LOGI(TAG, "LVGL handler task started");
+    for (;;) {
+        lv_timer_handler();
+        if (++iterations % 200 == 0) {
+            ESP_LOGI(TAG, "LVGL handler alive; flush=%lu ready=%lu",
+                     (unsigned long)flush_count, (unsigned long)flush_ready_count);
+        }
+        vTaskDelay(pdMS_TO_TICKS(5));
+    }
+}
+
+static void create_lvgl_proof_screen(void)
+{
+    lv_obj_t *screen = lv_scr_act();
+    lv_obj_set_style_bg_color(screen, lv_color_hex(0xF80000), 0);
+    lv_obj_set_style_bg_opa(screen, LV_OPA_COVER, 0);
+
+    lv_obj_t *label = lv_label_create(screen);
+    lv_label_set_text(label, "FORGEUI LVGL");
+    lv_obj_set_style_text_color(label, lv_color_white(), 0);
+    lv_obj_set_style_text_font(label, &lv_font_montserrat_14, 0);
+    lv_obj_center(label);
+    lv_obj_invalidate(screen);
+    ESP_LOGI(TAG, "Minimal red LVGL proof screen created");
+}
 
 void displayConfig(void)
 {
-    static lv_disp_draw_buf_t disp_buf; // contains internal graphic buffer(s) called draw buffer(s)
+    static lv_disp_draw_buf_t draw_buffer;
+    lv_color_t *buffer_a = heap_caps_malloc(EXAMPLE_LCD_H_RES * 20 * sizeof(lv_color_t), MALLOC_CAP_DMA);
+    lv_color_t *buffer_b = heap_caps_malloc(EXAMPLE_LCD_H_RES * 20 * sizeof(lv_color_t), MALLOC_CAP_DMA);
+    assert(buffer_a && buffer_b);
 
-
-
-
-    ESP_LOGI(TAG, "Initialize LVGL library");
+    ESP_LOGI(TAG, "Initialize LVGL; buffers=%p,%p", buffer_a, buffer_b);
     lv_init();
-    // alloc draw buffers used by LVGL
-    // it's recommended to choose the size of the draw buffer(s) to be at least 1/10 screen sized
-    lv_color_t *buf1 = heap_caps_malloc(EXAMPLE_LCD_H_RES * 20 * sizeof(lv_color_t), MALLOC_CAP_DMA);
-    assert(buf1);
-    lv_color_t *buf2 = heap_caps_malloc(EXAMPLE_LCD_H_RES * 20 * sizeof(lv_color_t), MALLOC_CAP_DMA);
-    assert(buf2);
-    // initialize LVGL draw buffers
-    lv_disp_draw_buf_init(&disp_buf, buf1, buf2, EXAMPLE_LCD_H_RES * 20);
-
-    ESP_LOGI(TAG, "Register display driver to LVGL");
+    lv_disp_draw_buf_init(&draw_buffer, buffer_a, buffer_b, EXAMPLE_LCD_H_RES * 20);
     lv_disp_drv_init(&disp_drv);
     disp_drv.hor_res = EXAMPLE_LCD_H_RES;
     disp_drv.ver_res = EXAMPLE_LCD_V_RES;
-    disp_drv.flush_cb = example_lvgl_flush_cb;
-    disp_drv.drv_update_cb = example_lvgl_port_update_callback;
-    disp_drv.draw_buf = &disp_buf;
+    disp_drv.flush_cb = lvgl_flush_cb;
+    disp_drv.draw_buf = &draw_buffer;
     disp_drv.user_data = panel_handle;
-    lv_disp_t *disp = lv_disp_drv_register(&disp_drv);
+    lv_disp_drv_register(&disp_drv);
+    ESP_LOGI(TAG, "LVGL display driver registered: %dx%d", EXAMPLE_LCD_H_RES, EXAMPLE_LCD_V_RES);
 
-    ESP_LOGI(TAG, "Install LVGL tick timer");
-    // Tick interface for LVGL (using esp_timer to generate 2ms periodic event)
-    const esp_timer_create_args_t lvgl_tick_timer_args = {
-        .callback = &example_increase_lvgl_tick,
-        .name = "lvgl_tick"
+    const esp_timer_create_args_t tick_timer_args = {
+        .callback = lvgl_tick_cb,
+        .name = "lvgl_tick",
     };
-    esp_timer_handle_t lvgl_tick_timer = NULL;
-    ESP_ERROR_CHECK(esp_timer_create(&lvgl_tick_timer_args, &lvgl_tick_timer));
-    ESP_ERROR_CHECK(esp_timer_start_periodic(lvgl_tick_timer, EXAMPLE_LVGL_TICK_PERIOD_MS * 1000));
+    esp_timer_handle_t tick_timer;
+    ESP_ERROR_CHECK(esp_timer_create(&tick_timer_args, &tick_timer));
+    ESP_ERROR_CHECK(esp_timer_start_periodic(tick_timer, EXAMPLE_LVGL_TICK_PERIOD_MS * 1000));
+    ESP_LOGI(TAG, "LVGL tick timer started at %d ms", EXAMPLE_LVGL_TICK_PERIOD_MS);
 
-
-    ESP_LOGI(TAG, "Render ForgeUI GC9A01 display test");
-    forgeui_display_test(disp);
-
+    create_lvgl_proof_screen();
+    assert(xTaskCreate(lvgl_task, "lvgl", 4096, NULL, 4, NULL) == pdPASS);
 }
-/*************************************** USEFUL ELECTRONICS*****END OF FILE****/

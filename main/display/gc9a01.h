@@ -41,12 +41,12 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #define EXAMPLE_LCD_PIXEL_CLOCK_HZ     (20 * 1000 * 1000)
 /* Candidate ForgeUI ESP32-S3 DevKitC-1 wiring; physical validation pending. */
-#define EXAMPLE_PIN_NUM_SCLK           4
-#define EXAMPLE_PIN_NUM_MOSI           5
+#define EXAMPLE_PIN_NUM_SCLK           10
+#define EXAMPLE_PIN_NUM_MOSI           11
 #define EXAMPLE_PIN_NUM_MISO           -1
-#define EXAMPLE_PIN_NUM_LCD_DC         6
-#define EXAMPLE_PIN_NUM_LCD_RST        15
-#define EXAMPLE_PIN_NUM_LCD_CS         7
+#define EXAMPLE_PIN_NUM_LCD_DC         12
+#define EXAMPLE_PIN_NUM_LCD_RST        14
+#define EXAMPLE_PIN_NUM_LCD_CS         13
 
 #define EXAMPLE_LCD_H_RES              240
 #define EXAMPLE_LCD_V_RES              240

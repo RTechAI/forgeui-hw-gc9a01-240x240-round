@@ -1,96 +1,81 @@
-# ForgeUI GC9A01 240x240 Round Display — ESP32-S3
+# ForgeUI GC9A01 240×240 Round Display
 
-ForgeUI GC9A01 240x240 Round Display is an official ForgeUI Hardware Lab project developed by RTechAI. It establishes a reproducible ESP32-S3 DevKitC-1 baseline for a 1.28-inch 240x240 round GC9A01 SPI TFT and is intended to become a hardware foundation for ForgeUI Micro Projects and Micro Games experiments.
+ForgeUI GC9A01 240×240 Round Display is an official ForgeUI Hardware Lab project developed by [RTechAI](https://github.com/RTechAI). It provides a physically tested ESP32-S3 baseline for the GC9A01 1.28-inch 240×240 round SPI TFT and forms part of the wider ForgeUI ESP32 hardware, Micro Projects and embedded UI ecosystem.
+
+The low-level ESP-LCD display path is physically proven. LVGL rendering remains under investigation after a minimal LVGL proof screen produced a black physical display.
 
 ## Status
 
-**PHYSICAL VALIDATION: PENDING**
+- **Low-level ESP-LCD display path: physical pass** — the ESP32-S3, GC9A01 initialization, GPIO10–GPIO14 ribbon wiring, SPI communication, and full-screen red, green, blue, white, and black rendering were verified on the target hardware.
+- **LVGL display path: physical validation fail / investigation open** — the current minimal LVGL proof, intended to show a red background with centred white `FORGEUI LVGL` text, remained physically black. Its runtime and flush instrumentation, including the `LV_COLOR_16_SWAP` byte-order investigation, are retained for diagnosis.
 
-The firmware is built for the candidate wiring below. Scott must flash and inspect the physical display before this configuration is described as tested or known-good.
+## Purpose
 
-## Project purpose
-
-This is a deliberately minimal round-display bring-up. The firmware starts only the display and LVGL, then renders a static ForgeUI display test. It does not enable Wi-Fi, BLE, sensors, buttons, a joystick, or ForgeUI Studio integration.
+This repository is a small, cloneable baseline for an ESP32-S3 driving a round GC9A01 through ESP-IDF. It is intentionally limited to the physically proven low-level panel path and an LVGL diagnostic path. Future ForgeUI projects may build on the proven panel/wiring baseline, but LVGL transport must first be resolved and physically validated.
 
 ## Hardware
 
-- ESP32-S3 DevKitC-1
-- 1.28-inch round GC9A01 SPI TFT
-- Native resolution: 240x240
-- Display PCB markings: `1.28 TFT`, `VER1.0`, `240*240`, `GC9A01`
+- ESP32-S3 DevKitC-1 N16R8-class board: 16 MiB flash and 8 MiB octal PSRAM
+- 1.28-inch round GC9A01 SPI TFT, 240×240
+- PCB marking: `1.28 TFT`, `VER1.0`, `240*240`, `GC9A01`
 
-## Display wiring
+## Locked display wiring
 
 | GC9A01 | ESP32-S3 |
 | --- | --- |
 | VCC | 3.3V |
 | GND | GND |
-| SCL / SCLK | GPIO4 |
-| SDA / MOSI | GPIO5 |
-| DC | GPIO6 |
-| CS | GPIO7 |
-| RST | GPIO15 |
+| SCL / SCLK | GPIO10 |
+| SDA / MOSI | GPIO11 |
+| DC | GPIO12 |
+| CS | GPIO13 |
+| RST | GPIO14 |
+| MISO | Unused |
 
-This candidate wiring is pending physical validation. MISO is unused. The module exposes no separate backlight pin.
+The five signal GPIOs are intentionally adjacent for the ForgeUI Micro Projects flat-ribbon connection. This module has no separate backlight pin.
 
-## Display configuration
+## Software baseline
 
-The display path uses `espressif/esp_lcd_gc9a01` through ESP-IDF's `esp_lcd` SPI panel API. It uses SPI2 in mode 0 at 20 MHz, 16-bit pixels, BGR byte order, inverted colors, and a horizontally mirrored native 240x240 LVGL display. The ForgeUI test screen has a dark full-screen background, a near-edge circular arc, white/teal/amber/blue labels, and red/green/blue swatches to make coverage, orientation, clipping, colour order, refresh, and corruption easy to inspect.
+- ESP-IDF 5.5.4
+- LVGL 8.3.11
+- `espressif/esp_lcd_gc9a01` 1.2.0
+- SPI2, mode 0, 20 MHz, RGB565 (BGR panel order), hardware reset, inverted colour, and horizontal mirror
+- `sdkconfig` and `sdkconfig.defaults` declare the proven board’s 16 MiB flash and 8 MiB octal PSRAM; the simple single-app partition layout is retained.
 
-## Software/build baseline
+## LVGL diagnostic status
 
-Repository evidence pins:
+The current firmware intentionally renders one minimal LVGL proof screen: a solid red background and centred white `FORGEUI LVGL` text. The physical display remains black with this firmware. This is not a finished showcase and is not a physically proven LVGL baseline.
 
-- ESP-IDF dependency: 5.5.4 (`dependencies.lock`; manifest permits IDF 4.4 or newer)
-- LVGL: 8.3.11 (`dependencies.lock`; manifest requests `~8.3.0`)
-- Target: `esp32s3` (`dependencies.lock`)
-- GC9A01 driver: `espressif/esp_lcd_gc9a01` 1.2.0
+LVGL receives a 2 ms tick from `esp_timer`; one FreeRTOS task calls `lv_timer_handler()` every 5 ms. The ESP-IDF panel-transfer callback calls `lv_disp_flush_ready()` when DMA drawing completes. `main/display/display.c` logs driver registration, task progress, flush entry, and completion counts to support the investigation. The direct ESP-LCD transfer path remains the known-good comparison.
 
-The lockfile also records the Component Manager support dependency `espressif/cmake_utilities` 0.5.3.
+## Build, flash, and monitor
 
-## Build and flash
-
-Use an ESP-IDF environment compatible with the locked ESP-IDF 5.3.0 baseline:
+Use ESP-IDF 5.5.4 with the target board connected:
 
 ```powershell
-idf.py set-target esp32s3
 idf.py build
 idf.py -p COMx flash
 idf.py -p COMx monitor
 ```
 
-Replace `COMx` with the ESP32-S3 serial port. To flash and monitor in one command: `idf.py -p COMx flash monitor`. Exit the monitor with `Ctrl-]`.
+Replace `COMx` with the detected serial port. Use `Ctrl-]` to leave the monitor.
 
-## Physical validation record
+## Related ForgeUI Projects
 
-Physical validation pending.
+- [ForgeUI-P4](https://github.com/RTechAI/ForgeUI-P4) — RTechAI’s ESP32-P4 LVGL hardware baseline and framework.
 
-## ForgeUI Micro Projects direction
-
-This baseline is being evaluated as a reference platform for small ForgeUI projects including clocks, gauges, instrumentation, animations, Micro Games, and Learn / Flash / Hack embedded-code examples. Those features do not currently exist in this repository.
-
-## ForgeUI Hardware Lab
-
-ForgeUI Hardware Lab is an RTechAI/ForgeUI collection of physically tested ESP32 boards, displays, peripherals, examples, and experimental projects. It preserves reproducible hardware baselines through hardware identification, minimal bring-up, physical proof, and known-good configurations, then evaluates demonstrations and candidate targets for future ForgeUI Studio workflows.
-
-This Hardware Lab project does not by itself indicate that this ESP32-S3/GC9A01 target is currently integrated into ForgeUI Studio.
-
-## External dependency and reference attribution
-
-This repository began from [UsefulElectronics/esp32s3-gc9a01-lvgl](https://github.com/UsefulElectronics/esp32s3-gc9a01-lvgl). Existing Useful Electronics source headers, generated SquareLine LVGL files, and their attribution remain in the repository. The active display driver is the separately managed `espressif/esp_lcd_gc9a01` component; its version is pinned in `dependencies.lock` and its licence must be retained according to the Component Registry package.
-
-No top-level upstream licence file is present in the checked-out upstream HEAD. This project therefore does not replace, relabel, or imply ownership of upstream or third-party material. Any future licence addition must preserve applicable upstream and component dependency notices.
-
-## License and repository scope
-
-ForgeUI/RTechAI-authored additions in this baseline are limited to the display-only entry point, candidate wiring configuration, ForgeUI display test, and this documentation. Upstream and third-party material remains subject to its original notices and licences. No new top-level licence is asserted by this change.
+Future GC9A01 projects may link to the physically proven low-level panel baseline in this repository. No LVGL-ready or Micro Game baseline is claimed until LVGL has been physically validated.
 
 ## About ForgeUI
 
-ForgeUI is developed by RTechAI.
+ForgeUI is developed by RTechAI and focuses on visual embedded UI/HMI development alongside physically proven ESP32 workflows. ForgeUI Hardware Lab provides reproducible hardware references, examples, and experimental projects. This repository is one Hardware Lab baseline; it does not by itself mean that the GC9A01 target is integrated into ForgeUI Studio.
 
-- ForgeUI: https://forgeui.co.nz/
-- ForgeUI Studio: https://studio.forgeui.co.nz/
-- RTechAI GitHub: https://github.com/RTechAI
+- [RTechAI on GitHub](https://github.com/RTechAI)
+- [ForgeUI](https://forgeui.co.nz/)
+- [ForgeUI Studio](https://studio.forgeui.co.nz/)
 
-ForgeUI Studio is the visual embedded UI/HMI environment for supported ESP32 hardware. ForgeUI Hardware Lab contains physical hardware references and experimental projects.
+## Attribution and scope
+
+This repository began from [UsefulElectronics/esp32s3-gc9a01-lvgl](https://github.com/UsefulElectronics/esp32s3-gc9a01-lvgl). Its upstream application code and generated assets were removed from the active baseline because they were not part of the display-only project. The ForgeUI baseline retains no claim over upstream or third-party software. ESP-IDF, LVGL, and the managed GC9A01 component remain subject to their own licenses and notices.
+
+No top-level upstream license file was present in the checked-out upstream reference. Do not infer or add an upstream license without confirming it separately.

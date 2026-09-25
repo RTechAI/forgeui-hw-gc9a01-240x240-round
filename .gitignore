@@ -4,7 +4,7 @@ managed_components/
 
 sdkconfig
 sdkconfig.old
-sdkconfig.defaults
+!sdkconfig.defaults
 
 .project
 .cproject
