@@ -1,141 +1,96 @@
+# ForgeUI GC9A01 240x240 Round Display — ESP32-S3
 
-[![Build Status](https://img.shields.io/badge/USEFUL%20ELECTRONICS-YOUTUBE-red)](https://www.youtube.com/user/wardzx1)
+ForgeUI GC9A01 240x240 Round Display is an official ForgeUI Hardware Lab project developed by RTechAI. It establishes a reproducible ESP32-S3 DevKitC-1 baseline for a 1.28-inch 240x240 round GC9A01 SPI TFT and is intended to become a hardware foundation for ForgeUI Micro Projects and Micro Games experiments.
 
-# Sponsors
+## Status
 
-### PCBWay
-Tutorial Series Sponsor PCBWay Website. You can get extra free coupons using the link below:
-https://www.pcbway.com/setinvite.aspx?inviteid=582640
+**PHYSICAL VALIDATION: PENDING**
 
-***
+The firmware is built for the candidate wiring below. Scott must flash and inspect the physical display before this configuration is described as tested or known-good.
 
-# ESP32S3 Interfacing Rotary Encoder and GC9A01 TFT Rounded Display with LVGL
-***
-### [Tutorial Link](https://youtu.be/77VYMpIAbq4) On [![Build Status](https://img.shields.io/badge/YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/wardzx1) 
+## Project purpose
 
-In this tutorial, Rotary encoder is interfaced with ESP32S3 pulse counter peripheral that allows obtaining the position and rotation direction of the rotary encoder using 2 pins. 
+This is a deliberately minimal round-display bring-up. The firmware starts only the display and LVGL, then renders a static ForgeUI display test. It does not enable Wi-Fi, BLE, sensors, buttons, a joystick, or ForgeUI Studio integration.
 
-The obtained rotary encoder position value is shown on GC9A01 rounded display using LVGL library. 
+## Hardware
 
-The working principle of rotary encoder and involved hardware is explained in details with the used code. 
-![Circuit Diagram](https://github.com/UsefulElectronics/esp32s3-gc9a01-lvgl/blob/main/circuit%20diagram/cover1.png)
-***
+- ESP32-S3 DevKitC-1
+- 1.28-inch round GC9A01 SPI TFT
+- Native resolution: 240x240
+- Display PCB markings: `1.28 TFT`, `VER1.0`, `240*240`, `GC9A01`
 
-# ESP32S3 GC9A01 LVGL Smart Watch
-***
-### [Tutorial Link](https://youtu.be/Td08fweKXwY) On [![Build Status](https://img.shields.io/badge/YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/wardzx1) 
+## Display wiring
 
-In this tutorial, ESP32S3 MCU is used to display time and temperature data on a round display with a nice looking user interface that is designed using LVGL library with the help of Squareline Studio.
+| GC9A01 | ESP32-S3 |
+| --- | --- |
+| VCC | 3.3V |
+| GND | GND |
+| SCL / SCLK | GPIO4 |
+| SDA / MOSI | GPIO5 |
+| DC | GPIO6 |
+| CS | GPIO7 |
+| RST | GPIO15 |
 
-SNTP is used in order to get real time data over TCP connection with WiFi. The MCU processes the data and prints it on the GC9A01 display that is interfaced over SPI protocol.
+This candidate wiring is pending physical validation. MISO is unused. The module exposes no separate backlight pin.
 
-Temperature data, on the other hand, is obtained over MQTT connection with Node-Red that is running on a raspberry pi, Which takes a request from an MQTT topic to send HTTP GET request OpenWeather API to obtain weather related string and then filter out the JSON file to get only the temperature data to publish it to an MQTT topic that the ESP32S3 is subscribed to.
+## Display configuration
 
-Every part regarding the user interface design is also explained in details using SquareLine Studio.
-![Circuit Diagram](https://github.com/UsefulElectronics/esp32s3-gc9a01-lvgl/blob/main/circuit%20diagram/circuit%20diagram.PNG)
-***
+The display path uses `espressif/esp_lcd_gc9a01` through ESP-IDF's `esp_lcd` SPI panel API. It uses SPI2 in mode 0 at 20 MHz, 16-bit pixels, BGR byte order, inverted colors, and a horizontally mirrored native 240x240 LVGL display. The ForgeUI test screen has a dark full-screen background, a near-edge circular arc, white/teal/amber/blue labels, and red/green/blue swatches to make coverage, orientation, clipping, colour order, refresh, and corruption easy to inspect.
 
-# ESP32S3 HLK-LD1125H Human Presence Sensor
-***
-### [Tutorial Link](https://youtu.be/RXj-JX6W-YE) On [![Build Status](https://img.shields.io/badge/YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/wardzx1) 
+## Software/build baseline
 
-In this tutorial, ESP32S3 MCU is programmed to show Human Presence Radar data that is received over UART on GC9A01 round display that is driven over SPI.
+Repository evidence pins:
 
-The human presence radar continuously sends detected object distance and its movement type. the MCU takes the data converts it and prints it on the round display.
+- ESP-IDF dependency: 5.5.4 (`dependencies.lock`; manifest permits IDF 4.4 or newer)
+- LVGL: 8.3.11 (`dependencies.lock`; manifest requests `~8.3.0`)
+- Target: `esp32s3` (`dependencies.lock`)
+- GC9A01 driver: `espressif/esp_lcd_gc9a01` 1.2.0
 
-The nicely looking user interface is designed using Square line studio with LVGL library.
+The lockfile also records the Component Manager support dependency `espressif/cmake_utilities` 0.5.3.
 
-The radar module is tested to detect moving objects and human behind obstacle like door or wall. check out the test results.
+## Build and flash
 
-Reach out the Radar datasheet form this [link](https://github.com/UsefulElectronics/esp32s3-gc9a01-lvgl/blob/main/HLK-LD1125H-24Gen.pdf).
+Use an ESP-IDF environment compatible with the locked ESP-IDF 5.3.0 baseline:
 
-![Circuit Diagram](https://github.com/UsefulElectronics/esp32s3-gc9a01-lvgl/blob/main/circuit%20diagram/HLK-LD1125H.png)
-
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- |
-
-# SPI LCD and Touch Panel Example
-
-[esp_lcd](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/lcd.html) provides several panel drivers out-of box, e.g. ST7789, SSD1306, NT35510. However, there're a lot of other panels on the market, it's beyond `esp_lcd` component's responsibility to include them all.
-
-`esp_lcd` allows user to add their own panel drivers in the project scope (i.e. panel driver can live outside of esp-idf), so that the upper layer code like LVGL porting code can be reused without any modifications, as long as user-implemented panel driver follows the interface defined in the `esp_lcd` component.
-
-This example shows how to use GC9A01 or ILI9341 display driver from Component manager in esp-idf project. These components are using API provided by `esp_lcd` component. This example will draw a fancy dash board with the LVGL library. For more information about porting the LVGL library, you can also refer to [another lvgl porting example](../i80_controller/README.md).
-
-## Touch controller STMPE610
-
-In this example you can enable touch controller STMPE610 connected via SPI. The SPI connection is shared with LCD screen.
-
-## How to use the example
-
-### Hardware Required
-
-* An ESP development board
-* An GC9A01 or ILI9341 LCD panel, with SPI interface (with/without STMPE610 SPI touch)
-* An USB cable for power supply and programming
-
-### Hardware Connection
-
-The connection between ESP Board and the LCD is as follows:
-
-```
-       ESP Board                       GC9A01/ILI9341 Panel + TOUCH
-┌──────────────────────┐              ┌────────────────────┐
-│             GND      ├─────────────►│ GND                │
-│                      │              │                    │
-│             3V3      ├─────────────►│ VCC                │
-│                      │              │                    │
-│             PCLK     ├─────────────►│ SCL                │
-│                      │              │                    │
-│             MOSI     ├─────────────►│ MOSI               │
-│                      │              │                    │
-│             MISO     |◄─────────────┤ MISO               │
-│                      │              │                    │
-│             RST      ├─────────────►│ RES                │
-│                      │              │                    │
-│             DC       ├─────────────►│ DC                 │
-│                      │              │                    │
-│             LCD CS   ├─────────────►│ LCD CS             │
-│                      │              │                    │
-│             TOUCH CS ├─────────────►│ TOUCH CS           │
-│                      │              │                    │
-│             BK_LIGHT ├─────────────►│ BLK                │
-└──────────────────────┘              └────────────────────┘
+```powershell
+idf.py set-target esp32s3
+idf.py build
+idf.py -p COMx flash
+idf.py -p COMx monitor
 ```
 
-The GPIO number used by this example can be changed in [lvgl_example_main.c](main/spi_lcd_touch_example_main.c).
-Especially, please pay attention to the level used to turn on the LCD backlight, some LCD module needs a low level to turn it on, while others take a high level. You can change the backlight level macro `EXAMPLE_LCD_BK_LIGHT_ON_LEVEL` in [lvgl_example_main.c](main/spi_lcd_touch_example_main.c).
+Replace `COMx` with the ESP32-S3 serial port. To flash and monitor in one command: `idf.py -p COMx flash monitor`. Exit the monitor with `Ctrl-]`.
 
-### Build and Flash
+## Physical validation record
 
-Run `idf.py -p PORT build flash monitor` to build, flash and monitor the project. A fancy animation will show up on the LCD as expected.
+Physical validation pending.
 
-The first time you run `idf.py` for the example will cost extra time as the build system needs to address the component dependencies and downloads the missing components from registry into `managed_components` folder.
+## ForgeUI Micro Projects direction
 
-(To exit the serial monitor, type ``Ctrl-]``.)
+This baseline is being evaluated as a reference platform for small ForgeUI projects including clocks, gauges, instrumentation, animations, Micro Games, and Learn / Flash / Hack embedded-code examples. Those features do not currently exist in this repository.
 
-See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html) for full steps to configure and use ESP-IDF to build projects.
+## ForgeUI Hardware Lab
 
-### Example Output
+ForgeUI Hardware Lab is an RTechAI/ForgeUI collection of physically tested ESP32 boards, displays, peripherals, examples, and experimental projects. It preserves reproducible hardware baselines through hardware identification, minimal bring-up, physical proof, and known-good configurations, then evaluates demonstrations and candidate targets for future ForgeUI Studio workflows.
 
-```bash
-...
-I (409) cpu_start: Starting scheduler on APP CPU.
-I (419) example: Turn off LCD backlight
-I (419) gpio: GPIO[2]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0
-I (429) example: Initialize SPI bus
-I (439) example: Install panel IO
-I (439) gpio: GPIO[5]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0
-I (449) example: Install GC9A01 panel driver
-I (459) gpio: GPIO[3]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0
-I (589) gpio: GPIO[0]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0
-I (589) example: Initialize touch controller STMPE610
-I (589) STMPE610: TouchPad ID: 0x0811
-I (589) STMPE610: TouchPad Ver: 0x03
-I (599) example: Turn on LCD backlight
-I (599) example: Initialize LVGL library
-I (609) example: Register display driver to LVGL
-I (619) example: Install LVGL tick timer
-I (619) example: Display LVGL Meter Widget
-...
-```
+This Hardware Lab project does not by itself indicate that this ESP32-S3/GC9A01 target is currently integrated into ForgeUI Studio.
+
+## External dependency and reference attribution
+
+This repository began from [UsefulElectronics/esp32s3-gc9a01-lvgl](https://github.com/UsefulElectronics/esp32s3-gc9a01-lvgl). Existing Useful Electronics source headers, generated SquareLine LVGL files, and their attribution remain in the repository. The active display driver is the separately managed `espressif/esp_lcd_gc9a01` component; its version is pinned in `dependencies.lock` and its licence must be retained according to the Component Registry package.
+
+No top-level upstream licence file is present in the checked-out upstream HEAD. This project therefore does not replace, relabel, or imply ownership of upstream or third-party material. Any future licence addition must preserve applicable upstream and component dependency notices.
+
+## License and repository scope
+
+ForgeUI/RTechAI-authored additions in this baseline are limited to the display-only entry point, candidate wiring configuration, ForgeUI display test, and this documentation. Upstream and third-party material remains subject to its original notices and licences. No new top-level licence is asserted by this change.
+
+## About ForgeUI
+
+ForgeUI is developed by RTechAI.
+
+- ForgeUI: https://forgeui.co.nz/
+- ForgeUI Studio: https://studio.forgeui.co.nz/
+- RTechAI GitHub: https://github.com/RTechAI
+
+ForgeUI Studio is the visual embedded UI/HMI environment for supported ESP32 hardware. ForgeUI Hardware Lab contains physical hardware references and experimental projects.

@@ -33,13 +33,6 @@ esp_lcd_panel_handle_t panel_handle = NULL;
 /* FUNCTION PROTOTYPES -------------------------------------------------------*/
 void gc9a01_displayInit(void)
 {
-    ESP_LOGI(gc9a01, "Turn off LCD backlight");
-    gpio_config_t bk_gpio_config = {
-        .mode = GPIO_MODE_OUTPUT,
-        .pin_bit_mask = 1ULL << EXAMPLE_PIN_NUM_BK_LIGHT
-    };
-    ESP_ERROR_CHECK(gpio_config(&bk_gpio_config));
-
     ESP_LOGI(gc9a01, "Initialize SPI bus");
     spi_bus_config_t buscfg = {
         .sclk_io_num = EXAMPLE_PIN_NUM_SCLK,
@@ -91,14 +84,8 @@ void gc9a01_displayInit(void)
 
     ESP_ERROR_CHECK(esp_lcd_panel_mirror(panel_handle, true, false));
 
-    // user can flush pre-defined pattern to the screen before we turn on the screen or backlight
+    // This module has no separately exposed backlight control pin.
     ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(panel_handle, true));
-
-
-    ESP_LOGI(gc9a01, "Turn on LCD backlight");
-    gpio_set_level(EXAMPLE_PIN_NUM_BK_LIGHT, EXAMPLE_LCD_BK_LIGHT_ON_LEVEL);
-
-
 }
 
 /*************************************** USEFUL ELECTRONICS*****END OF FILE****/

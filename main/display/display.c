@@ -25,9 +25,60 @@ lv_disp_drv_t disp_drv;  // contains callback functions
 /* DEFINITIONS ---------------------------------------------------------------*/
 
 /* MACROS --------------------------------------------------------------------*/
-static const char *TAG = "example";
-/* PRIVATE FUNCTIONS DECLARATION ---------------------------------------------*/
-extern void example_lvgl_demo_ui(lv_disp_t *disp);
+static const char *TAG = "forgeui_display";
+
+static void forgeui_display_test(lv_disp_t *disp)
+{
+    lv_obj_t *screen = lv_disp_get_scr_act(disp);
+    lv_obj_set_style_bg_color(screen, lv_color_hex(0x07121F), 0);
+
+    lv_obj_t *ring = lv_arc_create(screen);
+    lv_obj_set_size(ring, 224, 224);
+    lv_obj_center(ring);
+    lv_arc_set_range(ring, 0, 100);
+    lv_arc_set_value(ring, 76);
+    lv_arc_set_rotation(ring, 135);
+    lv_obj_remove_style(ring, NULL, LV_PART_KNOB);
+    lv_obj_set_style_arc_width(ring, 8, LV_PART_MAIN);
+    lv_obj_set_style_arc_width(ring, 8, LV_PART_INDICATOR);
+    lv_obj_set_style_arc_color(ring, lv_color_hex(0x1E3850), LV_PART_MAIN);
+    lv_obj_set_style_arc_color(ring, lv_color_hex(0x1DE9B6), LV_PART_INDICATOR);
+
+    lv_obj_t *title = lv_label_create(screen);
+    lv_label_set_text(title, "FORGEUI");
+    lv_obj_set_style_text_font(title, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_color(title, lv_color_hex(0xFFFFFF), 0);
+    lv_obj_align(title, LV_ALIGN_CENTER, 0, -54);
+
+    const char *labels[] = {"GC9A01", "240 x 240", "DISPLAY TEST"};
+    const lv_color_t colors[] = {
+        LV_COLOR_MAKE(0x1D, 0xE9, 0xB6),
+        LV_COLOR_MAKE(0xFF, 0xB7, 0x4D),
+        LV_COLOR_MAKE(0x90, 0xCA, 0xF9),
+    };
+    const int offsets[] = {-22, 4, 32};
+    for (size_t i = 0; i < 3; ++i) {
+        lv_obj_t *label = lv_label_create(screen);
+        lv_label_set_text(label, labels[i]);
+        lv_obj_set_style_text_color(label, colors[i], 0);
+        lv_obj_align(label, LV_ALIGN_CENTER, 0, offsets[i]);
+    }
+
+    const lv_color_t swatch_colors[] = {
+        LV_COLOR_MAKE(0xFF, 0x17, 0x44),
+        LV_COLOR_MAKE(0x00, 0xE6, 0x76),
+        LV_COLOR_MAKE(0x29, 0x79, 0xFF),
+    };
+    const int swatch_offsets[] = {-28, 0, 28};
+    for (size_t i = 0; i < 3; ++i) {
+        lv_obj_t *swatch = lv_obj_create(screen);
+        lv_obj_set_size(swatch, 14, 14);
+        lv_obj_set_style_radius(swatch, LV_RADIUS_CIRCLE, 0);
+        lv_obj_set_style_bg_color(swatch, swatch_colors[i], 0);
+        lv_obj_set_style_border_width(swatch, 0, 0);
+        lv_obj_align(swatch, LV_ALIGN_CENTER, swatch_offsets[i], 62);
+    }
+}
 /* FUNCTION PROTOTYPES -------------------------------------------------------*/
 
 
@@ -130,8 +181,8 @@ void displayConfig(void)
     ESP_ERROR_CHECK(esp_timer_start_periodic(lvgl_tick_timer, EXAMPLE_LVGL_TICK_PERIOD_MS * 1000));
 
 
-    ESP_LOGI(TAG, "Display LVGL Meter Widget");
-    example_lvgl_demo_ui(disp);
+    ESP_LOGI(TAG, "Render ForgeUI GC9A01 display test");
+    forgeui_display_test(disp);
 
 }
 /*************************************** USEFUL ELECTRONICS*****END OF FILE****/
