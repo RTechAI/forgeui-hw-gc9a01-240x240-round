@@ -1,6 +1,7 @@
 /**
  ******************************************************************************
- *							USEFUL ELECTRONICS
+ * Original project attribution: Useful Electronics / Ward Almasarani.
+ * ForgeUI Hardware Lab adaptation: RTechAI.
  ******************************************************************************/
 /**
  ******************************************************************************
@@ -9,8 +10,6 @@
  * @version :  v.1.0
  * @date    :  Jan 31, 2023
  * @link    :  https://www.youtube.com/@usefulelectronics
- *			   Hold Ctrl button and click on the link to be directed to
-			   Useful Electronics YouTube channel	
  ******************************************************************************/
 
 #ifndef MAIN_GC9A01_H_
@@ -40,7 +39,7 @@
 //////////////////// Please update the following configuration according to your LCD spec //////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #define EXAMPLE_LCD_PIXEL_CLOCK_HZ     (20 * 1000 * 1000)
-/* Candidate ForgeUI ESP32-S3 DevKitC-1 wiring; physical validation pending. */
+/* Physically proven ForgeUI GC9A01 round-display wiring. */
 #define EXAMPLE_PIN_NUM_SCLK           10
 #define EXAMPLE_PIN_NUM_MOSI           11
 #define EXAMPLE_PIN_NUM_MISO           -1

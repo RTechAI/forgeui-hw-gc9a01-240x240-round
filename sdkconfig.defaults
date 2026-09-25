@@ -3,6 +3,7 @@ CONFIG_SPIRAM=y
 CONFIG_SPIRAM_MODE_OCT=y
 CONFIG_SPIRAM_TYPE_AUTO=y
 CONFIG_SPIRAM_SPEED_80M=y
+CONFIG_SPIRAM_USE_MEMMAP=y
 # The IDF full 8 MiB boot-time memory test runs before normal startup and
 # exceeds the early RTC watchdog window on this board.
 CONFIG_SPIRAM_MEMTEST=n
